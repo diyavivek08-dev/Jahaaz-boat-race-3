@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JAHAAZ - Checkpoint 2</title>
+  <style>
+    :root {
+      --bg-dark: #030b1e;
+      --bg-card: rgba(10, 25, 47, 0.85);
+      --accent-cyan: #00f2fe;
+      --accent-blue: #4facfe;
+      --text-light: #e6f1ff;
+      --text-dim: #8892b0;
+      --correct: #00e676;
+      --wrong: #ff5252;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background: radial-gradient(circle at center, #0a192f 0%, #020c1b 100%);
+      color: var(--text-light);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      overflow-x: hidden;
+    }
+
+    .container {
+      background: var(--bg-card);
+      border: 1px solid rgba(0, 242, 254, 0.2);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 20px rgba(0, 242, 254, 0.15);
+      border-radius: 16px;
+      padding: 30px;
+      width: 100%;
+      max-width: 650px;
+      text-align: center;
+      backdrop-filter: blur(8px);
+    }
+
+    h1.title {
+      font-size: 2.5rem;
+      letter-spacing: 4px;
+      color: var(--accent-cyan);
+      text-shadow: 0 0 12px rgba(0, 242, 254, 0.6);
+      margin-bottom: 20px;
+      text-transform: uppercase;
+    }
+
+    .timer-box {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: var(--accent-blue);
+      background: rgba(0, 0, 0, 0.3);
+      padding: 8px 18px;
+      border-radius: 20px;
+      display: inline-block;
+      margin-bottom: 25px;
+      border: 1px solid rgba(79, 172, 254, 0.3);
+    }
+
+    .question-text {
+      font-size: 1.15rem;
+      line-height: 1.6;
+      margin-bottom: 25px;
+      color: var(--text-light);
+      text-align: left;
+      white-space: pre-line;
+    }
+
+    .options-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .option-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(0, 242, 254, 0.3);
+      color: var(--text-light);
+      padding: 14px 18px;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.2s ease;
+    }
+
+    .option-btn:hover {
+      background: rgba(0, 242, 254, 0.15);
+      border-color: var(--accent-cyan);
+      transform: translateY(-2px);
+    }
+
+    .input-box {
+      width: 100%;
+      padding: 14px;
+      border-radius: 8px;
+      border: 1px solid var(--accent-cyan);
+      background: rgba(0, 0, 0, 0.5);
+      color: #fff;
+      font-size: 1.1rem;
+      margin-bottom: 20px;
+      outline: none;
+    }
+
+    .submit-btn {
+      background: linear-gradient(45deg, var(--accent-blue), var(--accent-cyan));
+      border: none;
+      color: #020c1b;
+      font-weight: bold;
+      padding: 12px 30px;
+      font-size: 1rem;
+      border-radius: 25px;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .submit-btn:hover {
+      opacity: 0.9;
+    }
+
+    .feedback-overlay {
+      margin-top: 20px;
+      font-size: 1.3rem;
+      font-weight: bold;
+      min-height: 40px;
+    }
+
+    .feedback-correct {
+      color: var(--correct);
+      text-shadow: 0 0 10px rgba(0, 230, 118, 0.4);
+    }
+
+    .feedback-wrong {
+      color: var(--wrong);
+      text-shadow: 0 0 10px rgba(255, 82, 82, 0.4);
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1 class="title">JAHAAZ</h1>
+  
+  <div class="timer-box">
+    ⏱️ <span id="timer">00:00</span>
+  </div>
+
+  <div id="quiz-area">
+    <div id="question" class="question-text">Loading question...</div>
+    <div id="answers-container"></div>
+    <div id="feedback" class="feedback-overlay"></div>
+  </div>
+</div>
+
+<script>
+const questionBank = {
+  physics: [
+    { type: 'mcq', q: "You connect two unequal resistors (R1>R2) in series across a battery. Which resistor experiences the greater voltage drop?", options: ["The smaller resistor (R2)", "The larger resistor (R1)", "Both experience the exact same voltage drop", "Neither, the voltage drops to zero"], answer: "B" },
+    { type: 'mcq', q: "A hawk drops a feather and a heavy iron bolt simultaneously inside a vacuum chamber. Why do they hit the bottom at the exact same time?", options: ["Gravity acts more strongly on the feather in a vacuum.", "Air resistance is absent, and gravitational acceleration is independent of mass.", "The magnetic field of the chamber pulls them equally.", "The feather's mass increases as it falls."], answer: "B" },
+    { type: 'mcq', q: "You snap a bar magnet cleanly into two pieces. What do you observe at the break points?", options: ["Both broken ends become demagnetized completely.", "New opposite poles immediately form, creating two complete, independent magnets.", "The two pieces repel each other violently.", "The magnetic strength quadruples."], answer: "B" },
+    { type: 'mcq', q: "What must the internal resistance of an ideal ammeter be to avoid disrupting the circuit?", options: ["Infinite resistance", "Zero resistance", "Equal to the load resistance", "Negative resistance"], answer: "B" },
+    { type: 'mcq', q: "A squirrel rolls a nut down a frictionless curved ramp. What happens to its total mechanical energy as it descends?", options: ["It increases constantly.", "It decreases due to friction.", "It remains perfectly constant.", "It converts entirely into magnetic energy."], answer: "C" },
+    { type: 'mcq', q: "Two identical lamps are wired in parallel across a battery. If one lamp burns out, what happens to the voltage across the surviving lamp?", options: ["It drops to zero.", "It halves.", "It stays exactly the same.", "It doubles."], answer: "C" }
+  ],
+  maths: [
+    { type: 'mcq', q: "If 100 times the 100th term of an AP is equal to 50 times its 50th term, then the 150th term of this AP is:", options: ["-150", "150 times its 50th term", "0", "150"], answer: "C" },
+    { type: 'mcq', q: "A dolphin’s jump curve is h(t) = 4t - t². When does it reach its maximum height?", options: ["1 s", "2 s", "3 s", "4 s"], answer: "B" },
+    { type: 'mcq', q: "A submarine’s position is represented by 2x + y = 7 and x - y = 2. What is its position (x, y)?", options: ["(2,3)", "(3,1)", "(1,3)", "(4,-1)"], answer: "B" },
+    { type: 'mcq', q: "In a group of 40 ocean explorers, 24 are sailors, 19 are divers, and 8 are both. How many are sailors only?", options: ["8", "11", "16", "24"], answer: "C" },
+    { type: 'mcq', q: "How many distinct arrangements of the letters in LEVEL are possible?", options: ["20", "30", "60", "120"], answer: "B" }
+  ],
+  logic: [
+    { type: 'mcq', q: "A mermaid says, 'I have no siblings, and the mother of the person in this photograph is my mother's daughter.' Who is in the photograph?", options: ["Her mother", "Her daughter", "Her grandmother", "Her aunt"], answer: "B" },
+    { type: 'mcq', q: "Three animals stand in a line. The shark is not first. The dolphin is not first. The turtle stands behind the dolphin. Which order is possible?", options: ["Shark, Dolphin, Turtle", "Dolphin, Shark, Turtle", "Turtle, Dolphin, Shark", "Shark, Turtle, Dolphin"], answer: "B" },
+    { type: 'mcq', q: "A crab arranges shells in this sequence: 1, 4, 9, 16, 25, __. What comes next?", options: ["30", "35", "36", "49"], answer: "C" },
+    { type: 'num', q: "A pufferfish thinks of a number. It doubles the number and adds 6 to get 20. What was the original number?", answer: "7" },
+    { type: 'num', q: "Nine identical-looking pearls are on a table. One is heavier than the others. What is the minimum number of weighings needed on a balance scale to guarantee finding the heavier pearl?", answer: "2" },
+    { type: 'num', q: "A scientist must cross a river with acid, base, and water. Rearrange step codes: 1)take water across, return alone 2)bring acid back 3)take acid across 4)take base across 5)take acid across, return alone. Write in format: 5-4-...", answer: "5-4-2-1-3" }
+  ],
+  sportsGK: [
+    { type: 'mcq', q: "Which legendary Indian batter is widely nicknamed the God of Cricket?", options: ["Sunil Gavaskar", "Sachin Tendulkar", "Virat Kohli", "Rahul Dravid"], answer: "B" },
+    { type: 'mcq', q: "Who was the captain of the Indian team when they won the inaugural ICC T20 World Cup in 2007?", options: ["Sourav Ganguly", "Rahul Dravid", "MS Dhoni", "Anil Kumble"], answer: "C" },
+    { type: 'mcq', q: "Which country has won the most FIFA World Cup titles in men's football history?", options: ["Germany", "Argentina", "Brazil", "Italy"], answer: "C" },
+    { type: 'num', q: "How many bones does a typical adult human have?", answer: "206" },
+    { type: 'num', q: "How many sides does a dodecagon have?", answer: "12" },
+    { type: 'num', q: "In which year was the first iPhone released?", answer: "2007" }
+  ],
+  chemistry: [
+    { type: 'mcq', q: "Which of the following properties of a solution depends on the number of dissolved solute particles rather than their identity?", options: ["Viscosity", "Surface tension", "Osmotic pressure", "Refractive index"], answer: "C" },
+    { type: 'mcq', q: "What is the oxidation state of cobalt in the coordination compound [Co(NH3)6]Cl3?", options: ["+1", "+2", "+3", "+6"], answer: "C" },
+    { type: 'mcq', q: "Which reagent should be used to distinguish between an aldehyde and a ketone?", options: ["Tollens' reagent", "NaCl solution", "Dilute HCl", "NaOH solution"], answer: "A" },
+    { type: 'num', q: "A sea witch prepares 2 litres of a potion containing exactly 0.5 moles of dissolved sea crystals. What is the molarity (M)?", answer: "0.25" },
+    { type: 'num', q: "A solution has an H+ concentration of 1 x 10^-3 mol L^-1. What is its pH?", answer: "3" }
+  ]
+};
+
+const allowedSubjects = ['maths'];
+
+let currentQuestion = null;
+let currentSubject = '';
+let timerSeconds = 0;
+let timerInterval = null;
+
+function startTimer() {
+  clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    timerSeconds++;
+    let mins = Math.floor(timerSeconds / 60).toString().padStart(2, '0');
+    let secs = (timerSeconds % 60).toString().padStart(2, '0');
+    document.getElementById('timer').innerText = `${mins}:${secs}`;
+  }, 1000);
+}
+
+function getUsedIndices(subject) {
+  let data = localStorage.getItem(`jahaaz_used_${subject}`);
+  return data ? JSON.parse(data) : [];
+}
+
+function saveUsedIndex(subject, index) {
+  let used = getUsedIndices(subject);
+  used.push(index);
+  localStorage.setItem(`jahaaz_used_${subject}`, JSON.stringify(used));
+}
+
+function resetUsedIndices(subject) {
+  localStorage.removeItem(`jahaaz_used_${subject}`);
+}
+
+function getRandomQuestion() {
+  const selectedSubject = allowedSubjects[Math.floor(Math.random() * allowedSubjects.length)];
+  const questions = questionBank[selectedSubject];
+  let usedIndices = getUsedIndices(selectedSubject);
+
+  if (usedIndices.length >= questions.length) {
+    resetUsedIndices(selectedSubject);
+    usedIndices = [];
+  }
+
+  let availableIndices = [];
+  for (let i = 0; i < questions.length; i++) {
+    if (!usedIndices.includes(i)) availableIndices.push(i);
+  }
+
+  const randomIndex = availableIndices[Math.floor(Math.random() * availableIndices.length)];
+  saveUsedIndex(selectedSubject, randomIndex);
+
+  currentSubject = selectedSubject;
+  return questions[randomIndex];
+}
+
+function loadNextQuestion() {
+  document.getElementById('feedback').innerText = '';
+  currentQuestion = getRandomQuestion();
+  
+  const qContainer = document.getElementById('question');
+  const aContainer = document.getElementById('answers-container');
+  qContainer.innerText = currentQuestion.q;
+  aContainer.innerHTML = '';
+
+  if (currentQuestion.type === 'mcq') {
+    const grid = document.createElement('div');
+    grid.className = 'options-grid';
+    
+    const labels = ['A', 'B', 'C', 'D'];
+    currentQuestion.options.forEach((opt, idx) => {
+      const btn = document.createElement('button');
+      btn.className = 'option-btn';
+      btn.innerText = `${labels[idx]}) ${opt}`;
+      btn.onclick = () => checkAnswer(labels[idx]);
+      grid.appendChild(btn);
+    });
+    aContainer.appendChild(grid);
+  } else {
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'input-box';
+    input.placeholder = 'Type your answer here...';
+    input.id = 'num-answer';
+    
+    const submitBtn = document.createElement('button');
+    submitBtn.className = 'submit-btn';
+    submitBtn.innerText = 'Submit Answer';
+    submitBtn.onclick = () => checkAnswer(document.getElementById('num-answer').value.trim());
+
+    aContainer.appendChild(input);
+    aContainer.appendChild(submitBtn);
+  }
+}
+
+function checkAnswer(userAnswer) {
+  const feedback = document.getElementById('feedback');
+  const isCorrect = (userAnswer.toString().toUpperCase() === currentQuestion.answer.toString().toUpperCase());
+
+  if (isCorrect) {
+    feedback.className = 'feedback-overlay feedback-correct';
+    feedback.innerText = "Congratulations! RACE AHEAD";
+    clearInterval(timerInterval);
+  } else {
+    feedback.className = 'feedback-overlay feedback-wrong';
+    feedback.innerText = "Wrong Answer! Try another one";
+    timerSeconds += 5;
+    setTimeout(() => {
+      loadNextQuestion();
+    }, 1200);
+  }
+}
+
+window.onload = () => {
+  startTimer();
+  loadNextQuestion();
+};
+</script>
+</body>
+</html>
